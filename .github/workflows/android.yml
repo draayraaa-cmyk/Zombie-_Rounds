@@ -8,15 +8,21 @@ jobs:
       - name: Checkout project
         uses: actions/checkout@v4
 
+      - name: Verify main.lua exists
+        run: |
+          if [ ! -f "main.lua" ]; then
+            echo "ERROR: main.lua was not found in the root directory!"
+            exit 1
+          fi
+
       - name: Bundle into .love
-        run: zip -r game.love . -x "*.git*"
+        run: zip -r game.love . -x "*.git*" "game.love"
 
       - name: Build Android APK
         uses: love-actions/love-actions-android@v2
         with:
-          app-name: "My Awesome Game"
-          bundle-id: "com.yourname.mygame"
-          resource-path: "./"
+          app-name: "My Game"
+          bundle-id: "com.love2d.mygame"
           love-package: "./game.love"
 
       - name: Upload Finished APK

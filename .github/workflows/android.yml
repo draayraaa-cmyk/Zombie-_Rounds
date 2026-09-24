@@ -11,14 +11,15 @@ jobs:
       - name: Create .love file
         run: |
           git archive --format=zip -o game.love HEAD
-          unzip -l game.love | head -20   # sanity check: main.lua must be at the root
+          unzip -l game.love | head -20   # main.lua should be at the root
 
       - name: Build Android APK
         uses: love-actions/love-actions-android@v2
         with:
           app-name: "My Game"
           bundle-id: "com.love2d.mygame"
-          love-package: "game.love"
+          resource-path: "./android-res"
+          love-package: "./game.love"
 
       - name: Upload Finished APK
         uses: actions/upload-artifact@v4

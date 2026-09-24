@@ -6,7 +6,7 @@ function nearestZombie()
     local bottom, top = arenaBounds()
     for _, z in ipairs(zombies) do
         -- ignore zombies that haven't walked into the arena yet
-        if z.x >= 0 and z.x <= WIDTH and z.y >= bottom and z.y <= top then
+        if zombieInArena(z, bottom, top) then
             local d = (z.x-player.x)^2 + (z.y-player.y)^2
             if d < bestD then bestD = d; target = z end
         end

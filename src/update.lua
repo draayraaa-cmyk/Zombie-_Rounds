@@ -160,12 +160,15 @@ end
 -- ---------- enemies ----------
 
 local function updateZombies(dt)
+    local bottom, top = arenaBounds()
     for i = #zombies, 1, -1 do
         local z = zombies[i]
         z.wob = z.wob + dt*4
         local distToPlayer = math.sqrt((z.x-player.x)^2 + (z.y-player.y)^2)
 
-        if z.preferredRange and distToPlayer <= z.preferredRange then
+        -- ranged zombies only stop and shoot once they are inside the arena;
+        -- until then they keep walking in, so nothing fires from off-screen
+        if z.preferredRange and zombieInArena(z, bottom, top) and distToPlayer <= z.preferredRange then
             z.shootCd = z.shootCd - dt
             if z.shootCd <= 0 then
                 fireEnemyBullet(z)

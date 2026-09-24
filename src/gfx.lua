@@ -82,3 +82,26 @@ GREEN  = color(61, 220, 132)
 DGREEN = color(6, 35, 15)
 BUYON  = color(31, 122, 76)
 BUYOFF = color(42, 49, 64)
+
+-- ---------- safe area (notches, rounded corners, system bars) ----------
+-- Insets in pixels, measured inward from each screen edge. All zero on desktop.
+SAFE = {l = 0, r = 0, t = 0, b = 0}
+
+function updateSafeArea()
+    SAFE.l, SAFE.r, SAFE.t, SAFE.b = 0, 0, 0, 0
+    if not love.window.getSafeArea then return end
+    local ok, x, y, w, h = pcall(love.window.getSafeArea)
+    if not ok or not w or w <= 0 or h <= 0 then return end
+    local sc = (love.window.getDPIScale and love.window.getDPIScale()) or 1
+    x, y, w, h = x * sc, y * sc, w * sc, h * sc
+    -- clamp so a bad value from the platform can never wreck the layout
+    SAFE.l = math.min(math.max(0, x), WIDTH * 0.25)
+    SAFE.t = math.min(math.max(0, y), HEIGHT * 0.25)
+    SAFE.r = math.min(math.max(0, WIDTH - (x + w)), WIDTH * 0.25)
+    SAFE.b = math.min(math.max(0, HEIGHT - (y + h)), HEIGHT * 0.25)
+end
+
+function isTouchDevice()
+    local os_ = love.system.getOS()
+    return os_ == "Android" or os_ == "iOS"
+end

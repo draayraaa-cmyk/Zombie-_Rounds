@@ -1,10 +1,11 @@
 -- hud.lua
 -- In-run HUD, the shared drawButton helper, and pause / game-over overlays.
 
-function drawButton(id, label, x, y, w, h, bgcol, txtcol)
+-- size (optional) overrides the label font size
+function drawButton(id, label, x, y, w, h, bgcol, txtcol, size)
     fc(bgcol)
     rectF(x, y, w, h)
-    txtC(label, x + w/2, y + h/2, S(18), txtcol)
+    txtC(label, x + w/2, y + h/2, size or S(18), txtcol)
     table.insert(buttons, {id=id, x=x, y=y, w=w, h=h})
 end
 
@@ -13,33 +14,35 @@ function drawHud()
     local chipH = S(40)
     local chipW = S(130)
     local gap = S(14)
-    local chipY = HEIGHT - chipH - pad
+    local left = SAFE.l + pad                    -- keep clear of notches / rounded corners
+    local right = WIDTH - SAFE.r - pad
+    local chipY = HEIGHT - SAFE.t - chipH - pad
 
     fc(22, 29, 41, 230)
-    rectF(pad, chipY, chipW, chipH)
-    txtL("coins " .. coins, pad + S(12), chipY + S(10), S(20), GOLD)
-    txtL("gems " .. gems, pad + S(12), chipY - S(16), S(13), CYAN)
+    rectF(left, chipY, chipW, chipH)
+    txtL("coins " .. coins, left + S(12), chipY + S(10), S(20), GOLD)
+    txtL("gems " .. gems, left + S(12), chipY - S(16), S(13), CYAN)
 
     local buffParts = {}
     if buffSpeedTimeLeft > 0 then table.insert(buffParts, "SPD " .. math.ceil(buffSpeedTimeLeft) .. "s") end
     if buffDamageTimeLeft > 0 then table.insert(buffParts, "DMG " .. math.ceil(buffDamageTimeLeft) .. "s") end
     if shieldTimeLeft > 0 then table.insert(buffParts, "SHIELD " .. math.ceil(shieldTimeLeft) .. "s") end
     if #buffParts > 0 then
-        txtL(table.concat(buffParts, "  "), pad + S(12), chipY - S(32), S(11), WHITE)
+        txtL(table.concat(buffParts, "  "), left + S(12), chipY - S(32), S(11), WHITE)
     end
 
     fc(22, 29, 41, 230)
-    rectF(WIDTH - pad - chipW, chipY, chipW, chipH)
+    rectF(right - chipW, chipY, chipW, chipH)
     if gameMode == "classic" then
-        txtL("wave " .. wave, WIDTH - pad - chipW + S(12), chipY + S(10), S(20), WHITE)
+        txtL("wave " .. wave, right - chipW + S(12), chipY + S(10), S(20), WHITE)
     else
         local mm = math.floor(survivalTime/60)
         local ss = math.floor(survivalTime % 60)
-        txtL(string.format("%d:%02d", mm, ss), WIDTH - pad - chipW + S(12), chipY + S(10), S(20), WHITE)
+        txtL(string.format("%d:%02d", mm, ss), right - chipW + S(12), chipY + S(10), S(20), WHITE)
     end
 
-    local barX = pad + chipW + gap
-    local barW = math.max(S(60), WIDTH - pad*2 - chipW*2 - gap*2)
+    local barX = left + chipW + gap
+    local barW = math.max(S(60), (right - chipW - gap) - barX)
     fc(22, 29, 41, 230)
     rectF(barX, chipY, barW, chipH)
     if player then
@@ -54,7 +57,7 @@ function drawHud()
     local btnGap = S(10)
     local totalW = shopW + btnGap + weapW + btnGap + pauseW
     local startX = WIDTH/2 - totalW/2
-    local btnY = S(16)
+    local btnY = S(16) + SAFE.b
     drawButton("shopBtn", "SHOP", startX, btnY, shopW, btnH, GREEN, DGREEN)
     drawButton("cycleWeaponBtn", currentWeaponDef().short, startX + shopW + btnGap, btnY, weapW, btnH, color(120,109,241), color(240,235,255))
     drawButton("pauseBtn", state == "paused" and "RESUME" or "PAUSE", startX + shopW + btnGap + weapW + btnGap, btnY, pauseW, btnH, BTN, TXT)

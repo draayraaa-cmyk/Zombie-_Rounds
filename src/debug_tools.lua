@@ -1,7 +1,7 @@
 -- debug_tools.lua
 -- F1 overlay and F2-F9 cheats. Set DEBUG = false to disable everything here.
 
-DEBUG = true          -- set false to disable debug keys (F1-F9)
+DEBUG = false         -- set true to enable debug keys (F1-F9); keep false for release builds
 debugOverlay, debugGod = false, false
 
 function debugKey(key)

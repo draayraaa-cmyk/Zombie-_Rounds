@@ -2,32 +2,54 @@
 -- Top-level menu screens: start screen and run setup (mode / difficulty).
 
 function drawStartScreen()
-    txtC("ZOMBIE SIEGE", WIDTH/2, HEIGHT - S(62), S(38), TXT)
-    txtC("Drag / WASD to move. Auto-fires at the nearest zombie.", WIDTH/2, HEIGHT - S(90), S(13), MUTED)
+    -- everything is laid out inside the safe area, so it fits phones and desktops alike
+    local cx = (SAFE.l + (WIDTH - SAFE.r)) / 2
+    local topY = HEIGHT - SAFE.t
+
+    txtC("ZOMBIE SIEGE", cx, topY - S(62), S(38), TXT)
+    txtC(isTouchDevice() and "Drag to move. Auto-fires at the nearest zombie."
+                          or "Drag / WASD to move. Auto-fires at the nearest zombie.",
+         cx, topY - S(90), S(13), MUTED)
     local mm = math.floor(bestSurvivalTime/60)
     local ss = math.floor(bestSurvivalTime % 60)
     txtC("gems " .. gems .. "    best wave " .. bestWave .. "    best horde " .. string.format("%d:%02d", mm, ss),
-         WIDTH/2, HEIGHT - S(114), S(15), CYAN)
+         cx, topY - S(114), S(15), CYAN)
     local achCount = 0
     for _, d in ipairs(achievementDefs) do if achieved[d.id] then achCount = achCount + 1 end end
     local relicCount = 0
     for _, d in ipairs(relicDefs) do if relicUnlocked[d.key] then relicCount = relicCount + 1 end end
     txtC("achievements " .. achCount .. "/" .. #achievementDefs .. "    relics " .. relicCount .. "/" .. #relicDefs,
-         WIDTH/2, HEIGHT - S(134), S(12), GOLD)
+         cx, topY - S(134), S(12), GOLD)
+    txtL("v" .. VERSION, WIDTH - SAFE.r - S(58), SAFE.b + S(8), S(12), MUTED)
 
-    local bY = S(20)
-    local bx = WIDTH/2 - S(130)
-    drawButton("startBtn", "START GAME", bx, bY, S(260), S(56), GREEN, DGREEN)
-    bY = bY + S(56) + S(10)
-    drawButton("weaponBtn", "WEAPONS", bx, bY, S(260), S(44), color(255,160,60), color(35,20,0))
-    bY = bY + S(44) + S(8)
-    drawButton("skinBtn", "SKINS", bx, bY, S(260), S(44), color(80,160,255), color(10,25,45))
-    bY = bY + S(44) + S(8)
-    drawButton("relicBtn", "RELICS", bx, bY, S(260), S(44), color(160,90,255), color(30,10,45))
-    bY = bY + S(44) + S(8)
-    drawButton("metaBtn", "PERMANENT UPGRADES", bx, bY, S(260), S(44), color(120,109,241), color(240,235,255))
-    bY = bY + S(44) + S(8)
-    drawButton("settingsBtn", "SETTINGS", bx, bY, S(260), S(40), BTN, TXT)
+    -- listed bottom-to-top (START sits lowest, within thumb reach); h = height weight
+    local items = {
+        {id="startBtn",    label="START GAME",         h=1.35, bg=GREEN,              fg=DGREEN},
+        {id="weaponBtn",   label="WEAPONS",            h=1.0,  bg=color(255,160,60),  fg=color(35,20,0)},
+        {id="skinBtn",     label="SKINS",              h=1.0,  bg=color(80,160,255),  fg=color(10,25,45)},
+        {id="relicBtn",    label="RELICS",             h=1.0,  bg=color(160,90,255),  fg=color(30,10,45)},
+        {id="metaBtn",     label="PERMANENT UPGRADES", h=1.0,  bg=color(120,109,241), fg=color(240,235,255)},
+        {id="settingsBtn", label="SETTINGS",           h=0.9,  bg=BTN,                fg=TXT},
+    }
+
+    -- fit the stack into the space between the header and the bottom edge,
+    -- as tall as fits (capped), centred in that space
+    local areaBottom = S(20) + SAFE.b
+    local availH = HEIGHT - (S(150) + SAFE.t) - areaBottom
+    local gap = S(12)
+    local sumW = 0
+    for _, it in ipairs(items) do sumW = sumW + it.h end
+    local unit = math.min((availH - gap * (#items - 1)) / sumW, S(72))
+    local blockH = sumW * unit + gap * (#items - 1)
+
+    local bw = math.min(WIDTH - SAFE.l - SAFE.r - S(40), S(520))
+    local bx = cx - bw / 2
+    local y = areaBottom + (availH - blockH) / 2
+    for _, it in ipairs(items) do
+        local h = it.h * unit
+        drawButton(it.id, it.label, bx, y, bw, h, it.bg, it.fg, math.min(h * 0.4, S(30)))
+        y = y + h + gap
+    end
 end
 
 function drawModeSelect()

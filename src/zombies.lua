@@ -1,6 +1,11 @@
 -- zombies.lua
 -- Zombie type rolling, stats, spawning, death effects, and powerup drops.
 
+-- true once a zombie has walked into the playable arena (not still at the spawn edge)
+function zombieInArena(z, bottom, top)
+    return z.x >= 0 and z.x <= WIDTH and z.y >= bottom and z.y <= top
+end
+
 function rollZombieType(lvl)
     local roll = math.random()
     if lvl >= 3 and roll < 0.13 then return "fast"

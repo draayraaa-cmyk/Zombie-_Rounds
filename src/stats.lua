@@ -55,8 +55,8 @@ function baseStats()
 end
 
 function arenaBounds()
-    local top = HEIGHT - S(90)
-    local bottom = S(90)
+    local top = HEIGHT - S(90) - SAFE.t
+    local bottom = S(90) + SAFE.b
     return bottom, top
 end
 

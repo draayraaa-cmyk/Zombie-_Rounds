@@ -27,6 +27,8 @@ if os.getenv("LOVE2D_TOOLS") then pcall(require, "_love2d_tools_bridge") end
 --   src/panels.lua       shops, relics, settings
 --   src/input.lua        button actions + mouse/touch/keyboard callbacks
 
+VERSION = "1.0.2"
+
 require("src.gfx")
 require("src.debug_tools")
 require("src.save")
@@ -49,18 +51,27 @@ function love.load()
     love.graphics.setBackgroundColor(13 / 255, 17 / 255, 23 / 255)
     love.graphics.setLineStyle("smooth")
     WIDTH, HEIGHT = love.graphics.getDimensions()
+    updateSafeArea()
     math.randomseed(os.time())
     loadSave()
     initSounds()
     initState()
 end
 
-function love.resize(w, h) WIDTH, HEIGHT = love.graphics.getDimensions() end
+function love.resize(w, h)
+    WIDTH, HEIGHT = love.graphics.getDimensions()
+    updateSafeArea()
+end
 
 function love.quit() persistMeta(); flushSave() end
 
 function love.focus(f)
-    if not f and state == "playing" then state = "paused" end
+    if not f then
+        if state == "playing" then state = "paused" end
+        -- mobile OSes can kill a backgrounded app without calling love.quit,
+        -- so save everything the moment focus is lost
+        if state then persistMeta(); flushSave() end
+    end
 end
 
 function love.update(dt)

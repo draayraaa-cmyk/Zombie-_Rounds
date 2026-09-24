@@ -10,4 +10,10 @@ A small Love2D survival shooter prototype built in Lua.
 - Restart with Enter after death
 
 ## Run it
-1. Install Apk and coming soon pc zip/Exe
+1. Install Love2D from https://love2d.org/
+2. Open a terminal in this folder
+3. Run:
+
+   love .
+
+Or launch the folder with Love2D by dragging it onto the Love2D executable.

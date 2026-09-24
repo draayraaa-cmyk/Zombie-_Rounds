@@ -1,0 +1,27 @@
+name: Build Android APK
+on: [push]
+
+jobs:
+  android-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Bundle into .love
+        run: zip -r game.love . -x "*.git*"
+
+      - name: Build Android APK
+        uses: love-actions/love-actions-android@v2
+        with:
+          app-name: "My Awesome Game"
+          bundle-id: "com.yourname.mygame"
+          resource-path: "./"
+          love-package: "./game.love"
+
+      - name: Upload Finished APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Android-APK
+          path: |
+            **/*.apk

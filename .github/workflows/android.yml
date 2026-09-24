@@ -17,7 +17,7 @@ jobs:
         uses: love-actions/love-actions-android@v2
         with:
           app-name: "My Game"
-          bundle-id: "com.love2d.mygame"
+          bundle-id: "com.love2d.zombieseige"
           resource-path: "./android-res"
           love-package: "./game.love"
 

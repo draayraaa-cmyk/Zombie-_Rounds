@@ -16,7 +16,7 @@ jobs:
       - name: Build Android APK
         uses: love-actions/love-actions-android@v2
         with:
-          app-name: "My Game"
+          app-name: "Zombie Seige"
           bundle-id: "com.love2d.zombieseige"
           resource-path: "./android-res"
           love-package: "./game.love"

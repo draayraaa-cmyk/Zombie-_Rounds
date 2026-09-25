@@ -48,6 +48,14 @@ function baseStats()
     if buffSpeedTimeLeft > 0 then spd = spd * 1.40 end
     if buffDamageTimeLeft > 0 then dmg = dmg * 1.50 end
 
+    -- weapon mastery: bonuses only apply to the weapon currently equipped
+    if player then
+        local dB = masteryDmgBonus(player.weapon)
+        local rB = masteryRateBonus(player.weapon)
+        if dB > 0 then dmg = dmg * (1 + dB) end
+        if rB > 0 then fireRate = fireRate * (1 + rB) end
+    end
+
     return {
         damage = dmg, fireRate = fireRate, maxHp = maxHp, speed = spd,
         multishot = multishot, pierce = pierce, coinMult = coinMult, gemPerKill = gemPerKill,
@@ -64,6 +72,11 @@ function shake(amount) shakeAmount = math.max(shakeAmount, amount) end
 
 function currentWeaponDef()
     for _, d in ipairs(weaponDefs) do if d.key == player.weapon then return d end end
+    return weaponDefs[1]
+end
+
+function weaponDefByKey(key)
+    for _, d in ipairs(weaponDefs) do if d.key == key then return d end end
     return weaponDefs[1]
 end
 

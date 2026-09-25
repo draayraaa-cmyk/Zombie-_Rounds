@@ -20,7 +20,7 @@ function drawStartScreen()
     for _, d in ipairs(relicDefs) do if relicUnlocked[d.key] then relicCount = relicCount + 1 end end
     txtC("achievements " .. achCount .. "/" .. #achievementDefs .. "    relics " .. relicCount .. "/" .. #relicDefs,
          cx, topY - S(134), S(12), GOLD)
-    txtL("v" .. VERSION, WIDTH - SAFE.r - S(58), SAFE.b + S(8), S(12), MUTED)
+    txtL("v" .. VERSION, WIDTH - SAFE.r - S(120), SAFE.b + S(8), S(12), MUTED)
 
     -- listed bottom-to-top (START sits lowest, within thumb reach); h = height weight
     local items = {
@@ -29,6 +29,7 @@ function drawStartScreen()
         {id="skinBtn",     label="SKINS",              h=1.0,  bg=color(80,160,255),  fg=color(10,25,45)},
         {id="relicBtn",    label="RELICS",             h=1.0,  bg=color(160,90,255),  fg=color(30,10,45)},
         {id="metaBtn",     label="PERMANENT UPGRADES", h=1.0,  bg=color(120,109,241), fg=color(240,235,255)},
+        {id="statsBtn",    label="STATS",              h=0.9,  bg=color(90,200,220),  fg=color(8,30,35)},
         {id="settingsBtn", label="SETTINGS",           h=0.9,  bg=BTN,                fg=TXT},
     }
 
@@ -56,7 +57,7 @@ function drawModeSelect()
     fc(6, 9, 14, 200); rectF(0, 0, WIDTH, HEIGHT)
     local panelW = math.min(WIDTH - S(80), S(560))
     local panelX = (WIDTH - panelW)/2
-    local panelH = S(420)
+    local panelH = math.min(HEIGHT - S(40), S(490))
     local panelY = math.max(S(20), (HEIGHT - panelH)/2)
     fc(PANEL); rectF(panelX, panelY, panelW, panelH)
 
@@ -91,6 +92,16 @@ function drawModeSelect()
         table.insert(buttons, {id="diff_"..i, x=bx, y=y-S(46), w=dw, h=S(46)})
     end
     y = y - S(46) - S(20)
+
+    -- starting weapon: tap opens the weapon picker, then returns here
+    local weapDef = weaponDefByKey(startWeapon)
+    fc(BTN)
+    rectF(panelX + S(20), y-S(50), panelW - S(40), S(50))
+    txtL("STARTING WEAPON", panelX + S(34), y-S(20), S(11), MUTED)
+    txtC(weapDef.name, panelX + panelW/2 + S(40), y-S(33), S(16), TXT)
+    txtC(">", panelX + panelW - S(44), y-S(25), S(20), GOLD)
+    table.insert(buttons, {id="openWeaponPicker", x=panelX+S(20), y=y-S(50), w=panelW-S(40), h=S(50)})
+    y = y - S(50) - S(16)
 
     drawButton("beginBtn", "BEGIN RUN", panelX + (panelW-S(240))/2, y-S(60), S(240), S(60), GREEN, DGREEN)
     y = y - S(60) - S(14)

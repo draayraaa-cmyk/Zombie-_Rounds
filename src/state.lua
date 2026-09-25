@@ -19,6 +19,11 @@ function initState()
     joySensIndex = readProjectData("joySensIndex", 2)
     unlockedWeapons = deserializeSet(readProjectData("unlockedWeaponsStr", ""))
     unlockedWeapons["pistol"] = true
+    weaponKills = deserializeLevels(readProjectData("weaponKillsStr", ""))
+    -- carry over the old flamethrower-only counter
+    if (weaponKills.flamethrower or 0) < lifetimeFlameKills then weaponKills.flamethrower = lifetimeFlameKills end
+    startWeapon = readProjectData("startWeapon", "pistol")
+    if not unlockedWeapons[startWeapon] then startWeapon = "pistol" end
     unlockedSkins = deserializeSet(readProjectData("unlockedSkinsStr", ""))
     unlockedSkins["green"] = true
     activeSkin = readProjectData("activeSkin", "green")
@@ -41,12 +46,16 @@ function initState()
     vampKillCounter = 0
     tookDamageThisWave = false
     powerups = {}
+    mines = {}
+    arcs = {}
+    bladeAngle = 0
     buffSpeedTimeLeft = 0
     buffDamageTimeLeft = 0
     shieldTimeLeft = 0
     flameSoundTimer = 0
 
-    state = "start" -- start | modeSelect | metaShop | weaponShop | skinShop | relicMenu | settings | playing | shop | gameover | paused
+    state = "start" -- start | modeSelect | metaShop | weaponShop | skinShop | relicMenu | statsPage | settings | playing | shop | gameover | paused
+    weaponShopReturnState = "start"  -- which screen the weapon shop returns to on BACK
     resetConfirm = false
 
     bullets = {}

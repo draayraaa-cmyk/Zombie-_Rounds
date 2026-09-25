@@ -30,6 +30,11 @@ weaponDefs = {
     {key="laser",       name="Laser Rifle",      short="LASER",   desc="Thin beam, pierces everything", cost=25},
     {key="grenade",     name="Grenade Launcher", short="GRENADE", desc="Explodes in an area on impact", cost=35},
     {key="flamethrower",name="Flamethrower",     short="FLAME",   desc="Continuous short-range burn", cost=45},
+    {key="arc",         name="Arc Gun",          short="ARC",     desc="Chain lightning jumps between zombies", cost=55},
+    {key="crossbow",    name="Crossbow",         short="XBOW",    desc="Heavy piercing bolt with knockback", cost=60},
+    {key="mines",       name="Mine Layer",       short="MINES",   desc="Drops mines that blow up near zombies", cost=70},
+    {key="blades",      name="Orbital Blades",   short="BLADES",  desc="Blades orbit you and shred what's close", cost=80},
+    {key="boomerang",   name="Boomerang",        short="BOOM",    desc="Flies out and back, hitting both ways", cost=90},
 }
 
 skinDefs = {
@@ -91,6 +96,21 @@ relicDefs = {
     {key="ironwill",   name="Iron Will",       desc="-20% incoming damage",
      hint="Clear a wave without taking damage (Classic mode)",
      unlock=function() return noHitWavesCleared >= 1 end},
+    {key="stormcaller",name="Storm Caller",    desc="Arc Gun chains 2 extra times",
+     hint="150 kills with the Arc Gun",
+     unlock=function() return (weaponKills.arc or 0) >= 150 end},
+    {key="heavybolts", name="Heavy Bolts",     desc="Crossbow: +40% damage, more knockback",
+     hint="150 kills with the Crossbow",
+     unlock=function() return (weaponKills.crossbow or 0) >= 150 end},
+    {key="demolitionist",name="Demolitionist", desc="Mine Layer: +40% blast size & damage",
+     hint="150 kills with the Mine Layer",
+     unlock=function() return (weaponKills.mines or 0) >= 150 end},
+    {key="whirlwind",  name="Whirlwind",       desc="Orbital Blades: +1 blade, spin 25% faster",
+     hint="150 kills with the Orbital Blades",
+     unlock=function() return (weaponKills.blades or 0) >= 150 end},
+    {key="razorwind",  name="Razor Wind",      desc="Boomerang: +35% damage, +25% range",
+     hint="150 kills with the Boomerang",
+     unlock=function() return (weaponKills.boomerang or 0) >= 150 end},
     {key="godmode",    name="GODMODE",         desc="Total invincibility -- take no damage",
      hint="1000 kills, 10 bosses, wave 25, and 10-min Horde survival",
      unlock=function()
@@ -133,4 +153,9 @@ achievementDefs = {
         return true
     end},
     {id="gem_hoarder", name="Gem Hoarder",   desc="Earn 1000 lifetime gems", reward=30, check=function() return lifetimeGemsEarned >= 1000 end},
+    {id="arc_100",    name="Static Charge", desc="100 kills with the Arc Gun",       reward=15, check=function() return (weaponKills.arc or 0) >= 100 end},
+    {id="xbow_100",   name="Bolt Action",   desc="100 kills with the Crossbow",      reward=15, check=function() return (weaponKills.crossbow or 0) >= 100 end},
+    {id="mines_100",  name="Minefield",     desc="100 kills with the Mine Layer",    reward=15, check=function() return (weaponKills.mines or 0) >= 100 end},
+    {id="blades_100", name="Blender",       desc="100 kills with the Orbital Blades",reward=15, check=function() return (weaponKills.blades or 0) >= 100 end},
+    {id="boom_100",   name="Full Circle",   desc="100 kills with the Boomerang",     reward=15, check=function() return (weaponKills.boomerang or 0) >= 100 end},
 }

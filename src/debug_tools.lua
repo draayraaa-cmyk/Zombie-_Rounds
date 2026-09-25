@@ -26,7 +26,8 @@ function debugKey(key)
             msg = "+" .. (shift and "5 min" or "1 min")
         end
     elseif key == "f5" and inRun then
-        spawnZombie("boss", (gameMode == "classic") and math.max(1, wave) or (1 + math.floor(survivalTime / 20)))
+        local lvl = (gameMode == "classic") and math.max(1, wave) or (1 + math.floor(survivalTime / 20))
+        spawnZombie(rollBossType(lvl), lvl)
         msg = "boss spawned"
     elseif key == "f6" then
         for _, d in ipairs(weaponDefs) do unlockedWeapons[d.key] = true end

@@ -8,3 +8,4 @@ A small Love2D survival shooter prototype built in Lua.
 - Endless zombie waves with round scaling
 - Score and health HUD
 - Restart with Enter after death
+

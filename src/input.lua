@@ -38,9 +38,11 @@ function handleButton(id)
     elseif id == "closeMeta" then
         state = "start"
     elseif id == "weaponBtn" then
-        state = "weaponShop"
+        state = "weaponShop"; weaponShopReturnState = "start"
+    elseif id == "openWeaponPicker" then
+        state = "weaponShop"; weaponShopReturnState = "modeSelect"
     elseif id == "closeWeaponShop" then
-        state = "start"
+        state = weaponShopReturnState or "start"; weaponShopReturnState = "start"
     elseif id == "skinBtn" then
         state = "skinShop"
     elseif id == "closeSkinShop" then
@@ -48,6 +50,10 @@ function handleButton(id)
     elseif id == "relicBtn" then
         state = "relicMenu"; listScroll = 0
     elseif id == "closeRelicMenu" then
+        state = "start"
+    elseif id == "statsBtn" then
+        state = "statsPage"; listScroll = 0
+    elseif id == "closeStats" then
         state = "start"
     elseif id and id:sub(1,6) == "relic_" then
         local key = id:sub(7)
@@ -116,6 +122,12 @@ function handleButton(id)
                 checkProgress()
             end
         end
+    elseif id and id:sub(1,12) == "startweapon_" then
+        local key = id:sub(13)
+        if unlockedWeapons[key] and startWeapon ~= key then
+            startWeapon = key
+            persistMeta()
+        end
     elseif id and id:sub(1,10) == "buyweapon_" then
         local key = id:sub(11)
         local def
@@ -165,7 +177,10 @@ function updateJoystickFromTouch(tx, ty)
     end
 end
 
-function isListState() return state == "relicMenu" or state == "shop" or state == "metaShop" end
+function isListState()
+    return state == "relicMenu" or state == "shop" or state == "metaShop"
+        or state == "weaponShop" or state == "statsPage"
+end
 
 -- ---------- unified pointer handlers (x,y already in Codea coords: y up) ----------
 

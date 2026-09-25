@@ -60,13 +60,26 @@ function drawWorld()
       end
     end
 
+    for _, m in ipairs(mines) do
+        fc(58, 64, 78)
+        circF(m.x, m.y, m.r * 2.4)
+        if m.arm > 0 then
+            fc(255, 207, 77)                                   -- arming
+        elseif math.floor(love.timer.getTime() * 4) % 2 == 0 then
+            fc(255, 80, 80)                                    -- armed, blinking
+        else
+            fc(120, 30, 30)
+        end
+        circF(m.x, m.y, m.r * 0.9)
+    end
+
     for _, z in ipairs(zombies) do
         fc(z.col)
         circF(z.x, z.y, z.r*2)
         fc(22, 29, 41)
         circF(z.x - z.r*0.32, z.y + z.r*0.1, z.r*0.32)
         circF(z.x + z.r*0.32, z.y + z.r*0.1, z.r*0.32)
-        if z.t == "boss" then
+        if isBossType(z.t) then
             fc(255, 255, 255, 160)
             circL(z.x, z.y, z.r*2 + S(14), S(3))
         elseif z.t == "shooter" then
@@ -78,6 +91,23 @@ function drawWorld()
         elseif z.t == "shielded" and z.shield and z.shield > 0 then
             fc(90, 200, 220, 200)
             circL(z.x, z.y, z.r*2 + S(10), S(3))
+        end
+        if z.charge and z.chargeState == "telegraph" then
+            -- flickers faster as the dash gets closer, so the warning reads as urgent
+            local flicker = 0.35 + 0.45 * math.abs(math.sin(love.timer.getTime() * 14))
+            local dashDist = z.dashSpeed * z.dashDuration
+            fc(255, 70, 70, 255 * flicker)
+            lineF(z.x, z.y, z.x + z.dashDX * dashDist, z.y + z.dashDY * dashDist, S(4))
+            fc(255, 70, 70, 90)
+            circL(z.x, z.y, z.r*2 + S(10), S(2))
+        elseif z.chargeState == "dash" then
+            fc(255, 255, 255, 130)
+            circL(z.x, z.y, z.r*2 + S(8), S(3))
+        end
+        if z.t == "necromancer" and z.healPulse and z.healPulse > 0 then
+            local t = z.healPulse / 0.35              -- 1 at cast, fading to 0
+            fc(160, 70, 200, 200 * t)
+            circL(z.x, z.y, z.healRadius * 2 * (1 - t), S(3))
         end
         if z.shield and z.maxShield and z.maxShield > 0 then
             local w = z.r*2
@@ -106,6 +136,23 @@ function drawWorld()
         elseif b.kind == "grenade" then
             fc(255, 160, 60)
             circF(b.x, b.y, b.r*2)
+        elseif b.kind == "bolt" then
+            love.graphics.push()
+            love.graphics.translate(b.x, HEIGHT - b.y)
+            love.graphics.rotate(-atan2(b.vy, b.vx))
+            fc(190, 150, 100)
+            love.graphics.rectangle("fill", -S(18), -S(2.5), S(36), S(5))
+            fc(235, 235, 240)
+            love.graphics.rectangle("fill", S(12), -S(4), S(8), S(8))
+            love.graphics.pop()
+        elseif b.kind == "boomerang" then
+            love.graphics.push()
+            love.graphics.translate(b.x, HEIGHT - b.y)
+            love.graphics.rotate(-b.spin)
+            fc(240, 200, 120)
+            love.graphics.rectangle("fill", -S(13), -S(3.5), S(26), S(7))
+            love.graphics.rectangle("fill", -S(3.5), -S(13), S(7), S(26))
+            love.graphics.pop()
         else
             fc(255, 229, 138)
             circF(b.x, b.y, b.r*2)
@@ -116,6 +163,8 @@ function drawWorld()
     for _, b in ipairs(enemyBullets) do circF(b.x, b.y, b.r*2) end
 
     if player.weapon == "flamethrower" then drawFlameCone() end
+    drawArcs()
+    if player.weapon == "blades" then drawBlades() end
 
     if relicEnabled.godmode or debugGod or shieldTimeLeft > 0 then
         fc(255, 255, 255, 120)
@@ -171,4 +220,48 @@ function drawJoystick()
     circL(joyBaseX, joyBaseY, S(140), S(3))
     fc(255, 255, 255, 140)
     circF(joyThumbX, joyThumbY, S(60))
+end
+
+-- jagged lightning between points; flickers because the jitter is re-rolled each frame
+function drawArcs()
+    for _, a in ipairs(arcs) do
+        local alpha = 255 * math.max(0, a.life / 0.18)
+        for i = 1, #a.pts - 1 do
+            local p, q = a.pts[i], a.pts[i + 1]
+            local dx, dy = q.x - p.x, q.y - p.y
+            local len = math.sqrt(dx*dx + dy*dy)
+            if len > 1 then
+                local nx, ny = -dy / len, dx / len
+                local segs = math.max(2, math.floor(len / S(30)))
+                local px, py = p.x, p.y
+                fc(190, 230, 255, alpha)
+                for k = 1, segs do
+                    local t = k / segs
+                    local qx, qy = p.x + dx * t, p.y + dy * t
+                    if k < segs then
+                        local j = (math.random() * 2 - 1) * S(10)
+                        qx, qy = qx + nx * j, qy + ny * j
+                    end
+                    lineF(px, py, qx, qy, S(3))
+                    px, py = qx, qy
+                end
+            end
+        end
+    end
+end
+
+function drawBlades()
+    local s = baseStats()
+    fc(255, 255, 255, 22)
+    circL(player.x, player.y, S(78) * 2, 1)
+    for _, p in ipairs(bladePositions(s)) do
+        love.graphics.push()
+        love.graphics.translate(p.x, HEIGHT - p.y)
+        love.graphics.rotate(-(p.a + math.pi / 2))
+        fc(120, 220, 255, 120)
+        love.graphics.rectangle("fill", -S(17), -S(6), S(34), S(12))
+        fc(235, 240, 250)
+        love.graphics.rectangle("fill", -S(14), -S(3.5), S(28), S(7))
+        love.graphics.pop()
+    end
 end

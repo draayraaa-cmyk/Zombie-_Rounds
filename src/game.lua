@@ -9,6 +9,9 @@ function newGame()
     usedSecondWind = false
     vampKillCounter = 0
     powerups = {}
+    mines = {}
+    arcs = {}
+    bladeAngle = 0
     buffSpeedTimeLeft = 0
     buffDamageTimeLeft = 0
     shieldTimeLeft = 0
@@ -17,7 +20,7 @@ function newGame()
     player = {
         x = WIDTH/2, y = HEIGHT/2, r = S(24),
         hp = s.maxHp, maxHp = s.maxHp, fireCd = 0,
-        facing = -math.pi/2, weapon = "pistol",
+        facing = -math.pi/2, weapon = (unlockedWeapons[startWeapon] and startWeapon) or "pistol",
         col = skinColorFor(activeSkin),
     }
     bullets = {}
@@ -56,7 +59,7 @@ function startWave()
     for i = 1, count do
         table.insert(spawnQueue, rollZombieType(wave))
     end
-    if wave % 5 == 0 then table.insert(spawnQueue, "boss") end
+    if wave % 5 == 0 then table.insert(spawnQueue, rollBossType(wave)) end
     spawnTimer = 0
     waveActive = true
     showWaveBanner("Wave " .. wave)

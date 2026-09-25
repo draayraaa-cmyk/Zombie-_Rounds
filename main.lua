@@ -14,6 +14,7 @@ if os.getenv("LOVE2D_TOOLS") then pcall(require, "_love2d_tools_bridge") end
 --   src/save.lua         persistence, (de)serialization, persistMeta/resetProgress
 --   src/audio.lua        procedural sounds
 --   src/defs.lua         static definition tables (weapons, relics, achievements...)
+--   src/mastery.lua      per-weapon kill tiers and their stat bonuses
 --   src/stats.lua        levels/costs, baseStats, weapon helpers
 --   src/progress.lua     achievement / relic unlock checks
 --   src/state.lua        initState(): initial values for every global
@@ -27,13 +28,14 @@ if os.getenv("LOVE2D_TOOLS") then pcall(require, "_love2d_tools_bridge") end
 --   src/panels.lua       shops, relics, settings
 --   src/input.lua        button actions + mouse/touch/keyboard callbacks
 
-VERSION = "1.0.2"
+VERSION = "1.1.0-beta.3"
 
 require("src.gfx")
 require("src.debug_tools")
 require("src.save")
 require("src.audio")
 require("src.defs")
+require("src.mastery")
 require("src.stats")
 require("src.progress")
 require("src.state")
@@ -97,6 +99,8 @@ function love.draw()
         drawSkinShop()
     elseif state == "relicMenu" then
         drawRelicMenu()
+    elseif state == "statsPage" then
+        drawStatsScreen()
     elseif state == "settings" then
         drawSettings()
     elseif state == "gameover" then

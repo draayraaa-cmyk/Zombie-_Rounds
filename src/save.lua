@@ -86,6 +86,8 @@ function persistMeta()
     saveProjectData("soundOn", soundOn and 1 or 0)
     saveProjectData("joySensIndex", joySensIndex)
     saveProjectData("unlockedWeaponsStr", serializeSet(unlockedWeapons, weaponDefs))
+    saveProjectData("weaponKillsStr", serializeLevels(weaponKills, weaponDefs))
+    saveProjectData("startWeapon", startWeapon)
     saveProjectData("unlockedSkinsStr", serializeSet(unlockedSkins, skinDefs))
     saveProjectData("activeSkin", activeSkin)
     saveProjectData("modeIndex", modeIndex)
@@ -110,6 +112,8 @@ function resetProgress()
     soundOn = true
     joySensIndex = 2
     unlockedWeapons = {pistol = true}
+    weaponKills = {}
+    startWeapon = "pistol"
     unlockedSkins = {green = true}
     activeSkin = "green"
     modeIndex = 1

@@ -99,34 +99,73 @@ end
 
 function drawWeaponShop()
     backdrop()
-    local rowH = S(80)
+    -- taller rows than 1.0.x: an extra line for mastery progress, plus the
+    -- "set as starting weapon" toggle for weapons you already own
+    local rowH = S(100)
     local panelX, panelY, panelW, panelH = panelBox(rowH, #weaponDefs, 90)
     txtL("WEAPONS", panelX + S(20), panelY + panelH - S(38), S(24), TXT)
     txtL("gems: " .. gems, panelX + S(20), panelY + panelH - S(64), S(17), GOLD)
 
-    local y = panelY + panelH - S(96)
+    local viewTop = panelY + panelH - S(80)
+    local viewBottom = panelY + S(70)
+    local contentH = #weaponDefs * rowH - S(12)
+    local y = beginScrollList(panelX, panelW, viewTop, viewBottom, contentH, S(16))
     for _, def in ipairs(weaponDefs) do
         local owned = unlockedWeapons[def.key] or def.cost == 0
+        local isStart = (startWeapon == def.key)
 
         fc(ROW)
         rectF(panelX + S(16), y - rowH + S(12), panelW - S(32), rowH - S(12))
-        txtL(def.name, panelX + S(32), y - S(24), S(18), TXT)
-        txtL(def.desc, panelX + S(32), y - S(46), S(13), MUTED)
+        txtL(def.name, panelX + S(32), y - S(22), S(18), TXT)
+        txtL(def.desc, panelX + S(32), y - S(42), S(13), MUTED)
 
-        local btnW, btnH = S(110), S(44)
+        if owned then
+            local info = masteryInfo(def.key)
+            local label = info.maxed
+                and ("MAX MASTERY -- " .. info.kills .. " kills")
+                or  (info.label .. " -- " .. info.kills .. "/" .. info.nextThreshold .. " kills")
+            txtL(label, panelX + S(32), y - S(60), S(12), info.tier > 0 and CYAN or MUTED)
+
+            local barW = math.min(S(240), panelW - S(64))
+            local barY = y - S(74)
+            fc(0, 0, 0, 140)
+            rectF(panelX + S(32), barY, barW, S(6))
+            fc(info.maxed and GOLD or CYAN)
+            rectF(panelX + S(32), barY, barW * info.progress, S(6))
+        end
+
+        local btnW, btnH = S(110), S(40)
         local btnX = panelX + panelW - btnW - S(28)
-        local btnY = y - rowH + S(28)
-        local canBuy = (not owned) and gems >= def.cost
-        fc((not owned and canBuy) and BUYON or BUYOFF)
-        rectF(btnX, btnY, btnW, btnH)
-        txtC(owned and "OWNED" or ("$" .. def.cost), btnX + btnW/2, btnY + btnH/2, S(16),
-             (not owned and canBuy) and color(215,255,232) or MUTED)
+        local btnY = y - S(70)
+        local visible = (btnY >= viewBottom and btnY + btnH <= viewTop)
 
-        if not owned then
-            table.insert(buttons, {id="buyweapon_"..def.key, x=btnX, y=btnY, w=btnW, h=btnH})
+        if owned then
+            fc(BUYON)
+            rectF(btnX, btnY, btnW, btnH)
+            txtC("OWNED", btnX + btnW/2, btnY + btnH/2, S(15), color(215,255,232))
+
+            local sBtnW = S(100)
+            local sBtnX = btnX - sBtnW - S(10)
+            fc(isStart and color(160,90,255) or BTN)
+            rectF(sBtnX, btnY, sBtnW, btnH)
+            txtC(isStart and "STARTING" or "SET START", sBtnX + sBtnW/2, btnY + btnH/2, S(13),
+                 isStart and WHITE or color(200,205,215))
+            if visible and not isStart then
+                table.insert(buttons, {id="startweapon_"..def.key, x=sBtnX, y=btnY, w=sBtnW, h=btnH})
+            end
+        else
+            local canBuy = gems >= def.cost
+            fc(canBuy and BUYON or BUYOFF)
+            rectF(btnX, btnY, btnW, btnH)
+            txtC("$" .. def.cost, btnX + btnW/2, btnY + btnH/2, S(16),
+                 canBuy and color(215,255,232) or MUTED)
+            if visible then
+                table.insert(buttons, {id="buyweapon_"..def.key, x=btnX, y=btnY, w=btnW, h=btnH})
+            end
         end
         y = y - rowH
     end
+    endScrollList(panelX, panelW, viewTop, viewBottom, contentH)
 
     closeButton("closeWeaponShop", "BACK", panelX, panelY, panelW)
 end
@@ -227,6 +266,62 @@ function drawRelicMenu()
     endScrollList(panelX, panelW, viewTop, viewBottom, contentH)
 
     closeButton("closeRelicMenu", "BACK", panelX, panelY, panelW)
+end
+
+-- ---------- weapon mastery stats page ----------
+
+function drawStatsScreen()
+    backdrop()
+    local rowH = S(92)
+    local panelX, panelY, panelW, panelH = panelBox(rowH, #weaponDefs, 100)
+    txtL("WEAPON STATS", panelX + S(20), panelY + panelH - S(38), S(24), TXT)
+
+    local totalKills = 0
+    for _, def in ipairs(weaponDefs) do totalKills = totalKills + ((weaponKills and weaponKills[def.key]) or 0) end
+    txtL("lifetime kills: " .. totalKills, panelX + S(20), panelY + panelH - S(62), S(14), GOLD)
+
+    local viewTop = panelY + panelH - S(76)
+    local viewBottom = panelY + S(68)
+    local contentH = #weaponDefs * rowH - S(12)
+    local y = beginScrollList(panelX, panelW, viewTop, viewBottom, contentH, S(8))
+    for _, def in ipairs(weaponDefs) do
+        local owned = unlockedWeapons[def.key] or def.cost == 0
+        local info = masteryInfo(def.key)
+
+        fc(ROW)
+        rectF(panelX + S(16), y - rowH + S(12), panelW - S(32), rowH - S(12))
+
+        txtL(def.name, panelX + S(32), y - S(24), S(17), owned and TXT or color(90,96,108))
+        if not owned then
+            txtL("Not unlocked yet", panelX + S(32), y - S(46), S(12), color(80,84,92))
+        else
+            local label = info.maxed
+                and ("MAX MASTERY -- " .. info.kills .. " kills")
+                or  (info.label .. " -- " .. info.kills .. "/" .. info.nextThreshold .. " kills")
+            txtL(label, panelX + S(32), y - S(46), S(13), info.tier > 0 and CYAN or MUTED)
+
+            local bonus
+            if info.tier == 0 then
+                bonus = "No bonus yet"
+            else
+                local t = MASTERY_TIERS[info.tier]
+                bonus = string.format("+%d%% damage", math.floor(t.dmg*100 + 0.5))
+                if t.rate > 0 then bonus = bonus .. string.format(", +%d%% fire rate", math.floor(t.rate*100 + 0.5)) end
+            end
+            txtL(bonus, panelX + S(32), y - S(64), S(12), MUTED)
+
+            local barW = math.min(S(260), panelW - S(64))
+            local barY = y - S(78)
+            fc(0, 0, 0, 140)
+            rectF(panelX + S(32), barY, barW, S(6))
+            fc(info.maxed and GOLD or CYAN)
+            rectF(panelX + S(32), barY, barW * info.progress, S(6))
+        end
+        y = y - rowH
+    end
+    endScrollList(panelX, panelW, viewTop, viewBottom, contentH)
+
+    closeButton("closeStats", "BACK", panelX, panelY, panelW)
 end
 
 -- ---------- settings ----------

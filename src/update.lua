@@ -55,11 +55,14 @@ local function updatePlayer(dt, s)
     end
 
     player.fireCd = player.fireCd - dt
-    if player.weapon == "flamethrower" then
+    local w = player.weapon
+    if w == "flamethrower" then
         tickFlamethrower(dt, s)
+    elseif w == "blades" then
+        tickBlades(dt, s)
     elseif player.fireCd <= 0 and target then
         fireBullet()
-        player.fireCd = 1 / s.fireRate
+        player.fireCd = 1 / (s.fireRate * (weaponRateMult[w] or 1))
     end
 end
 
@@ -68,11 +71,15 @@ end
 local function moveBullets(dt)
     for i = #bullets, 1, -1 do
         local b = bullets[i]
-        b.x = b.x + b.vx*dt
-        b.y = b.y + b.vy*dt
-        if b.kind == "grenade" then b.timer = b.timer - dt end
-        if b.x < -40 or b.x > WIDTH+40 or b.y < -40 or b.y > HEIGHT+40 then
-            table.remove(bullets, i)
+        if b.kind == "boomerang" then
+            if not updateBoomerang(b, dt) then table.remove(bullets, i) end
+        else
+            b.x = b.x + b.vx*dt
+            b.y = b.y + b.vy*dt
+            if b.kind == "grenade" then b.timer = b.timer - dt end
+            if b.x < -40 or b.x > WIDTH+40 or b.y < -40 or b.y > HEIGHT+40 then
+                table.remove(bullets, i)
+            end
         end
     end
 end
@@ -100,7 +107,13 @@ local function resolveBulletHits()
                     local d = math.sqrt((b.x-z.x)^2 + (b.y-z.y)^2)
                     if d < z.r + b.r then
                         b.hit[z] = true
-                        applyDamageToZombie(j, z, b.damage)
+                        applyDamageToZombie(j, z, b.damage, b.src)
+                        if b.kind == "bolt" and z.hp > 0 then
+                            local sp = math.sqrt(b.vx*b.vx + b.vy*b.vy)
+                            local kb = S(26) * (relicEnabled.heavybolts and 1.6 or 1)
+                            z.x = z.x + b.vx / sp * kb
+                            z.y = z.y + b.vy / sp * kb
+                        end
                         b.pierce = b.pierce - 1
                         if b.pierce <= 0 then table.remove(bullets, i); break end
                     end
@@ -137,7 +150,7 @@ local function updateHordeSpawning(dt)
     end
     if survivalTime - lastBossTime >= 60 then
         local lvl = 1 + math.floor(survivalTime/20)
-        spawnZombie("boss", lvl)
+        spawnZombie(rollBossType(lvl), lvl)
         lastBossTime = survivalTime
     end
     local minute = math.floor(survivalTime/60)
@@ -159,6 +172,63 @@ end
 
 -- ---------- enemies ----------
 
+-- Charger / boss-charger: walk normally until in range and off cooldown, then
+-- stand still and telegraph (so the player gets a fair chance to dodge),
+-- then commit to a straight-line dash in the locked direction, then recover.
+local function updateCharger(z, dt, distToPlayer)
+    if z.chargeState == "walk" then
+        z.chargeTimer = math.max(0, z.chargeTimer - dt)
+        if z.chargeTimer <= 0 and distToPlayer <= z.chargeRange then
+            z.chargeState = "telegraph"
+            z.chargeTimer = z.telegraphDuration
+            local ang = atan2(player.y - z.y, player.x - z.x)
+            z.dashDX, z.dashDY = math.cos(ang), math.sin(ang)
+        else
+            local ang = atan2(player.y - z.y, player.x - z.x)
+            z.x = z.x + math.cos(ang) * z.speed * dt
+            z.y = z.y + math.sin(ang) * z.speed * dt + math.sin(z.wob)*0.15
+        end
+    elseif z.chargeState == "telegraph" then
+        z.chargeTimer = z.chargeTimer - dt
+        if z.chargeTimer <= 0 then
+            z.chargeState = "dash"
+            z.chargeTimer = z.dashDuration
+        end
+    elseif z.chargeState == "dash" then
+        z.chargeTimer = z.chargeTimer - dt
+        z.x = z.x + z.dashDX * z.dashSpeed * dt
+        z.y = z.y + z.dashDY * z.dashSpeed * dt
+        if z.chargeTimer <= 0 then
+            z.chargeState = "recover"
+            z.chargeTimer = 0.45
+        end
+    elseif z.chargeState == "recover" then
+        z.chargeTimer = z.chargeTimer - dt
+        if z.chargeTimer <= 0 then
+            z.chargeState = "walk"
+            z.chargeTimer = z.chargeCdMin + math.random() * (z.chargeCdMax - z.chargeCdMin)
+        end
+    end
+end
+
+-- Necromancer: holds at range like a shooter, but casts a heal pulse on a
+-- cooldown instead of firing.
+local function updateNecromancer(z, dt, distToPlayer, bottom, top)
+    if zombieInArena(z, bottom, top) and distToPlayer <= z.preferredRange then
+        z.healCd = z.healCd - dt
+        if z.healCd <= 0 then
+            castHealPulse(z)
+            z.healCd = z.healCdMin + math.random() * (z.healCdMax - z.healCdMin)
+        end
+        z.x = z.x + math.cos(z.wob) * 20 * dt
+    else
+        local ang = atan2(player.y - z.y, player.x - z.x)
+        z.x = z.x + math.cos(ang) * z.speed * dt
+        z.y = z.y + math.sin(ang) * z.speed * dt + math.sin(z.wob)*0.15
+    end
+    if z.healPulse > 0 then z.healPulse = math.max(0, z.healPulse - dt) end
+end
+
 local function updateZombies(dt)
     local bottom, top = arenaBounds()
     for i = #zombies, 1, -1 do
@@ -166,19 +236,31 @@ local function updateZombies(dt)
         z.wob = z.wob + dt*4
         local distToPlayer = math.sqrt((z.x-player.x)^2 + (z.y-player.y)^2)
 
+        if z.charge then
+            updateCharger(z, dt, distToPlayer)
+        elseif z.t == "necromancer" then
+            updateNecromancer(z, dt, distToPlayer, bottom, top)
         -- ranged zombies only stop and shoot once they are inside the arena;
         -- until then they keep walking in, so nothing fires from off-screen
-        if z.preferredRange and zombieInArena(z, bottom, top) and distToPlayer <= z.preferredRange then
+        elseif z.preferredRange and zombieInArena(z, bottom, top) and distToPlayer <= z.preferredRange then
             z.shootCd = z.shootCd - dt
             if z.shootCd <= 0 then
                 fireEnemyBullet(z)
-                z.shootCd = (z.t == "boss" and 1.4 or 1.7) + math.random()*0.6
+                z.shootCd = (isBossType(z.t) and 1.4 or 1.7) + math.random()*0.6
             end
             z.x = z.x + math.cos(z.wob) * 20 * dt
         else
             local ang = atan2(player.y - z.y, player.x - z.x)
             z.x = z.x + math.cos(ang) * z.speed * dt
             z.y = z.y + math.sin(ang) * z.speed * dt + math.sin(z.wob)*0.15
+        end
+
+        if z.t == "bosssummoner" then
+            z.summonCd = z.summonCd - dt
+            if z.summonCd <= 0 then
+                summonMinions(z)
+                z.summonCd = z.summonCdMin + math.random() * (z.summonCdMax - z.summonCdMin)
+            end
         end
 
         if distToPlayer < z.r + player.r then
@@ -300,6 +382,11 @@ local function updateEffects(dt)
         if c.life <= 0 then table.remove(coinPops, i) end
     end
 
+    for i = #arcs, 1, -1 do
+        arcs[i].life = arcs[i].life - dt
+        if arcs[i].life <= 0 then table.remove(arcs, i) end
+    end
+
     if hitFlash > 0 then hitFlash = hitFlash - dt end
     if waveBannerAlpha > 0 then waveBannerAlpha = math.max(0, waveBannerAlpha - dt/1.6) end
 end
@@ -317,6 +404,7 @@ function update(dt)
     updateBuffs(dt)
     updatePlayer(dt, s)
     updateBullets(dt)
+    updateMines(dt)
     if checkDeath() then return end
 
     updateSpawning(dt)

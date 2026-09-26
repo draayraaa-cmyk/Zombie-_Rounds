@@ -28,7 +28,7 @@ if os.getenv("LOVE2D_TOOLS") then pcall(require, "_love2d_tools_bridge") end
 --   src/panels.lua       shops, relics, settings
 --   src/input.lua        button actions + mouse/touch/keyboard callbacks
 
-VERSION = "1.1.0-beta.5"
+VERSION = "1.1.0"
 
 require("src.gfx")
 require("src.debug_tools")

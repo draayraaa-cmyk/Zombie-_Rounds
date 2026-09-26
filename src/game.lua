@@ -12,6 +12,9 @@ function newGame()
     mines = {}
     arcs = {}
     bladeAngle = 0
+    freezeTimeLeft = 0
+    magnetTimeLeft = 0
+    rouletteTimer = 30
     buffSpeedTimeLeft = 0
     buffDamageTimeLeft = 0
     shieldTimeLeft = 0
@@ -32,6 +35,7 @@ function newGame()
     combo = 0
     comboTimer = 0
     flameSoundTimer = 0
+    bladeSoundTimer = 0
     joyTouchId = nil
     joyBaseX, joyBaseY = nil, nil
     moveX, moveY = 0, 0

@@ -15,7 +15,7 @@ function debugKey(key)
     elseif key == "f3" then
         coins = coins + 500; msg = "+500 coins"
     elseif key == "f4" and inRun then
-        if gameMode == "classic" then
+        if gameMode == "classic" or gameMode == "roulette" then
             zombies, enemyBullets, spawnQueue = {}, {}, {}
             wave = wave + (shift and 5 or 1)
             waveClearDelay = 0
@@ -51,7 +51,7 @@ function drawDebug()
     local lines = {
         "DEBUG   " .. love.timer.getFPS() .. " fps",
         "enemies " .. #zombies .. "   shots " .. (#bullets + #enemyBullets) .. "   fx " .. #particles,
-        (gameMode == "classic") and ("wave " .. wave .. "   queue " .. #spawnQueue)
+        (gameMode == "classic" or gameMode == "roulette") and ("wave " .. wave .. "   queue " .. #spawnQueue)
                                 or ("horde time " .. math.floor(survivalTime) .. "s"),
         "F2 +100 gems    F3 +500 coins",
         "F4 next wave (Shift: +5 / +5min)",

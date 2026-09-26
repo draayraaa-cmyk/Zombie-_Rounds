@@ -27,6 +27,8 @@ function powerupColor(t)
     elseif t == "damage" then return color(255,120,120)
     elseif t == "shield" then return color(255,255,255)
     elseif t == "health" then return color(255,90,120)
+    elseif t == "freeze" then return color(180,240,255)
+    elseif t == "magnet" then return color(255,90,200)
     else return color(255,207,77)
     end
 end
@@ -50,6 +52,22 @@ function drawWorld()
             rectF(p.x - p.r*0.7, p.y - p.r*0.2, p.r*1.4, p.r*0.4)
             rectF(p.x - p.r*0.2, p.y - p.r*0.7, p.r*0.4, p.r*1.4)
         end
+      elseif p.t == "nuke" then
+        -- rare pickup: an unmissable pulsing hazard marker instead of the usual spinning square
+        local pulse = 0.75 + 0.25 * math.sin(love.timer.getTime() * 6)
+        fc(210, 255, 60, 90)
+        circF(p.x, p.y, p.r * 3.2 * pulse)
+        fc(30, 30, 20, 230)
+        circF(p.x, p.y, p.r * 2.2)
+        love.graphics.push()
+        love.graphics.translate(p.x, HEIGHT - p.y)
+        love.graphics.rotate(love.timer.getTime() * 1.5)
+        fc(210, 255, 60)
+        for k = 0, 2 do
+            love.graphics.rotate(math.pi * 2 / 3)
+            love.graphics.rectangle("fill", -p.r*0.18, p.r*0.15, p.r*0.36, p.r*0.95)
+        end
+        love.graphics.pop()
       else
         fc(powerupColor(p.t), 220)
         love.graphics.push()
@@ -76,6 +94,10 @@ function drawWorld()
     for _, z in ipairs(zombies) do
         fc(z.col)
         circF(z.x, z.y, z.r*2)
+        if freezeTimeLeft > 0 then
+            fc(180, 240, 255, 110)
+            circF(z.x, z.y, z.r*2)
+        end
         fc(22, 29, 41)
         circF(z.x - z.r*0.32, z.y + z.r*0.1, z.r*0.32)
         circF(z.x + z.r*0.32, z.y + z.r*0.1, z.r*0.32)

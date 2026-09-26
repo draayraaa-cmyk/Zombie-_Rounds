@@ -76,10 +76,13 @@ function fireGrenade(s)
     end
 end
 
+-- weapons with their own distinct fire sound; anything absent here uses "shoot"
+weaponFireSound = {arc = "zap", crossbow = "thud", mines = "beep", boomerang = "whoosh"}
+
 function fireBullet()
     local s = baseStats()
-    playSound("shoot")
     local w = player.weapon
+    playSound(weaponFireSound[w] or "shoot")
     local n0 = #bullets
     if w == "shotgun" then fireShotgun(s)
     elseif w == "laser" then fireLaser(s)
@@ -218,6 +221,13 @@ function rewardKill(z, src)
 end
 
 function applyDamageToZombie(idx, z, dmg, src)
+    -- crit chance from run/permanent upgrades, applied to every damage source
+    -- (including grenades/mines/nuke) for simplicity rather than only weapon hits
+    local critChance = baseStats().critChance
+    if critChance > 0 and math.random() < critChance then
+        dmg = dmg * 2
+        spawnParticles(z.x, z.y, WHITE, 3)
+    end
     if z.shield and z.shield > 0 then
         if dmg <= z.shield then
             z.shield = z.shield - dmg
@@ -253,8 +263,11 @@ function explodeGrenade(x, y)
     explodeAt(x, y, S(90), s.damage * 1.6, "grenade", 16)
 end
 
+-- pickups with their own sound; anything absent here uses the "coin" jingle
+local powerupSound = {freeze = "freeze", magnet = "magnet", nuke = "alarm"}
+
 function applyPowerup(t)
-    playSound("coin")
+    playSound(powerupSound[t] or "coin")
     shake(S(6))
     if t == "speed" then
         buffSpeedTimeLeft = 8
@@ -274,6 +287,24 @@ function applyPowerup(t)
         local burst = 15 + wave*2
         coins = coins + burst
         popText(player.x, player.y - S(30), "+" .. burst, color(255,207,77))
+    elseif t == "freeze" then
+        freezeTimeLeft = 5
+        popText(player.x, player.y - S(30), "FREEZE!", color(150,220,255))
+    elseif t == "magnet" then
+        magnetTimeLeft = 6
+        popText(player.x, player.y - S(30), "MAGNET!", color(255,207,77))
+    elseif t == "nuke" then
+        -- instant screen clear: flat damage (not scaled by weapon upgrades) to
+        -- every zombie currently on the field
+        shake(S(24))
+        playSound("explode")
+        levelFlash = 1.0
+        popText(player.x, player.y - S(30), "NUKE!", color(255,255,255))
+        for i = #zombies, 1, -1 do
+            local z = zombies[i]
+            spawnParticles(z.x, z.y, color(255,220,140), 10)
+            applyDamageToZombie(i, z, 500, "nuke")
+        end
     end
 end
 
@@ -450,6 +481,8 @@ function bladePositions(s)
 end
 
 function tickBlades(dt, s)
+    bladeSoundTimer = bladeSoundTimer - dt
+    if bladeSoundTimer <= 0 then playSound("whirr"); bladeSoundTimer = 0.35 end
     local spin = 3.6 * (relicEnabled.whirlwind and 1.25 or 1)
     bladeAngle = (bladeAngle + spin * dt) % (2 * math.pi)
     local dmg = s.damage * s.fireRate * 0.7

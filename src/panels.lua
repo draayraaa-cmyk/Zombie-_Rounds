@@ -15,10 +15,12 @@ local function closeButton(id, label, panelX, panelY, panelW)
 end
 
 local function panelBox(rowH, rows, extraTop, maxW)
-    local panelW = math.min(WIDTH - S(80), S(maxW or 640))
-    local panelX = (WIDTH - panelW)/2
-    local panelH = math.min(HEIGHT - S(40), S(extraTop or 90) + rowH * rows + S(70))
-    local panelY = math.max(S(20), (HEIGHT - panelH)/2)
+    local availW = WIDTH - SAFE.l - SAFE.r
+    local availH = HEIGHT - SAFE.t - SAFE.b
+    local panelW = math.min(availW - S(80), S(maxW or 640))
+    local panelX = SAFE.l + (availW - panelW)/2
+    local panelH = math.min(availH - S(40), S(extraTop or 90) + rowH * rows + S(70))
+    local panelY = SAFE.b + math.max(S(20), (availH - panelH)/2)
     fc(PANEL); rectF(panelX, panelY, panelW, panelH)
     return panelX, panelY, panelW, panelH
 end
@@ -328,10 +330,12 @@ end
 
 function drawSettings()
     backdrop()
-    local panelW = math.min(WIDTH - S(80), S(560))
-    local panelX = (WIDTH - panelW)/2
-    local panelH = S(340)
-    local panelY = math.max(S(20), (HEIGHT - panelH)/2)
+    local availW = WIDTH - SAFE.l - SAFE.r
+    local availH = HEIGHT - SAFE.t - SAFE.b
+    local panelW = math.min(availW - S(80), S(560))
+    local panelX = SAFE.l + (availW - panelW)/2
+    local panelH = math.min(availH - S(40), S(340))
+    local panelY = SAFE.b + math.max(S(20), (availH - panelH)/2)
     fc(PANEL); rectF(panelX, panelY, panelW, panelH)
     txtL("SETTINGS", panelX + S(20), panelY + panelH - S(38), S(24), TXT)
 

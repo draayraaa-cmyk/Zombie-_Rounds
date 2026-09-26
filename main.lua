@@ -28,7 +28,7 @@ if os.getenv("LOVE2D_TOOLS") then pcall(require, "_love2d_tools_bridge") end
 --   src/panels.lua       shops, relics, settings
 --   src/input.lua        button actions + mouse/touch/keyboard callbacks
 
-VERSION = "1.1.0-beta.3"
+VERSION = "1.1.0-beta.5"
 
 require("src.gfx")
 require("src.debug_tools")
@@ -113,7 +113,10 @@ function love.draw()
         drawHud()
         if state == "playing" then drawJoystick() end
         if state == "shop" then drawShop() end
-        if state == "paused" then drawPauseOverlay() end
+        if state == "paused" then
+            buttons = {}   -- HUD's SHOP/weapon buttons must not work while paused
+            drawPauseOverlay()
+        end
     end
 
     if DEBUG and debugOverlay then drawDebug() end

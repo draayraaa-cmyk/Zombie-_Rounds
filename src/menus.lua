@@ -55,10 +55,20 @@ end
 
 function drawModeSelect()
     fc(6, 9, 14, 200); rectF(0, 0, WIDTH, HEIGHT)
-    local panelW = math.min(WIDTH - S(80), S(560))
-    local panelX = (WIDTH - panelW)/2
-    local panelH = math.min(HEIGHT - S(40), S(490))
-    local panelY = math.max(S(20), (HEIGHT - panelH)/2)
+    local availW = WIDTH - SAFE.l - SAFE.r
+    local availH = HEIGHT - SAFE.t - SAFE.b
+    local panelW = math.min(availW - S(80), S(560))
+    local panelX = SAFE.l + (availW - panelW)/2
+
+    -- content height (title, mode row+desc, difficulty row+optional lock hint,
+    -- starting-weapon row, begin/back buttons) plus a small safety margin --
+    -- computed rather than guessed, so it stays correct as options are added
+    local anyLocked = false
+    for _, d in ipairs(difficultyDefs) do
+        if d.unlock and not d.unlock() then anyLocked = true end
+    end
+    local panelH = math.min(availH - S(40), S(20 + 494 + (anyLocked and 16 or 0) + 10))
+    local panelY = SAFE.b + math.max(S(20), (availH - panelH)/2)
     fc(PANEL); rectF(panelX, panelY, panelW, panelH)
 
     local top = panelY + panelH - S(20)
@@ -67,7 +77,8 @@ function drawModeSelect()
     local y = top - S(70)
     txtL("MODE", panelX + S(20), y, S(14), MUTED)
     y = y - S(38)
-    local mw = (panelW - S(56))/2
+    -- generalized so this keeps working as modes are added (was hardcoded to 2)
+    local mw = (panelW - S(40) - S(16)*(#modeDefs-1)) / #modeDefs
     for i, m in ipairs(modeDefs) do
         local bx = panelX + S(20) + (i-1)*(mw+S(16))
         local sel = (i == modeIndex)
@@ -82,16 +93,30 @@ function drawModeSelect()
 
     txtL("DIFFICULTY", panelX + S(20), y, S(14), MUTED)
     y = y - S(38)
-    local dw = (panelW - S(56) - S(32))/3
+    -- generalized so this keeps working as difficulties are added (was hardcoded to 3)
+    local dw = (panelW - S(40) - S(16)*(#difficultyDefs-1)) / #difficultyDefs
+    local lockedHint = nil
     for i, d in ipairs(difficultyDefs) do
         local bx = panelX + S(20) + (i-1)*(dw+S(16))
+        local unlocked = (d.unlock == nil) or d.unlock()
         local sel = (i == difficultyIndex)
-        fc(sel and color(255,160,60) or BTN)
-        rectF(bx, y-S(46), dw, S(46))
-        txtC(d.name, bx+dw/2, y-S(23), S(14), sel and color(35,20,0) or color(200,205,215))
-        table.insert(buttons, {id="diff_"..i, x=bx, y=y-S(46), w=dw, h=S(46)})
+        if not unlocked then
+            fc(color(35,40,50))
+            rectF(bx, y-S(46), dw, S(46))
+            txtC("LOCKED", bx+dw/2, y-S(23), S(12), color(80,84,92))
+            lockedHint = lockedHint or d.hint
+        else
+            fc(sel and color(255,160,60) or BTN)
+            rectF(bx, y-S(46), dw, S(46))
+            txtC(d.name, bx+dw/2, y-S(23), S(14), sel and color(35,20,0) or color(200,205,215))
+            table.insert(buttons, {id="diff_"..i, x=bx, y=y-S(46), w=dw, h=S(46)})
+        end
     end
-    y = y - S(46) - S(20)
+    y = y - S(46) - (lockedHint and S(16) or S(20))
+    if lockedHint then
+        txtL(lockedHint, panelX + S(20), y, S(11), color(90,96,108))
+        y = y - S(20)
+    end
 
     -- starting weapon: tap opens the weapon picker, then returns here
     local weapDef = weaponDefByKey(startWeapon)

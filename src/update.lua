@@ -24,6 +24,43 @@ local function updateBuffs(dt)
     if buffSpeedTimeLeft > 0 then buffSpeedTimeLeft = math.max(0, buffSpeedTimeLeft - dt) end
     if buffDamageTimeLeft > 0 then buffDamageTimeLeft = math.max(0, buffDamageTimeLeft - dt) end
     if shieldTimeLeft > 0 then shieldTimeLeft = math.max(0, shieldTimeLeft - dt) end
+    if freezeTimeLeft > 0 then freezeTimeLeft = math.max(0, freezeTimeLeft - dt) end
+    if magnetTimeLeft > 0 then magnetTimeLeft = math.max(0, magnetTimeLeft - dt) end
+end
+
+-- global movement multiplier while a Freeze pickup is active. Exempt from a
+-- charger's telegraph/dash timers -- those are fixed-duration state changes,
+-- not ongoing movement, so freezing them would just pause the fight oddly.
+local function freezeFactor()
+    return (freezeTimeLeft > 0) and 0.15 or 1.0
+end
+
+-- passive HP regen from the Regeneration upgrades
+local function updateRegen(dt, s)
+    if s.regenPerSec > 0 and player.hp < player.maxHp then
+        player.hp = math.min(player.maxHp, player.hp + s.regenPerSec * dt)
+    end
+end
+
+-- Roulette mode: force a random unlocked weapon every 30 seconds
+local function randomUnlockedWeapon(exclude)
+    local pool = {}
+    for _, d in ipairs(weaponDefs) do
+        if unlockedWeapons[d.key] and d.key ~= exclude then pool[#pool+1] = d.key end
+    end
+    if #pool == 0 then return exclude end
+    return pool[math.random(#pool)]
+end
+
+local function updateRoulette(dt)
+    if gameMode ~= "roulette" then return end
+    rouletteTimer = rouletteTimer - dt
+    if rouletteTimer <= 0 then
+        player.weapon = randomUnlockedWeapon(player.weapon)
+        rouletteTimer = 30
+        playSound("click")
+        showWaveBanner("New weapon: " .. currentWeaponDef().name .. "!")
+    end
 end
 
 -- ---------- player ----------
@@ -163,7 +200,7 @@ local function updateHordeSpawning(dt)
 end
 
 local function updateSpawning(dt)
-    if gameMode == "classic" then
+    if gameMode == "classic" or gameMode == "roulette" then
         updateClassicSpawning(dt)
     elseif gameMode == "horde" then
         updateHordeSpawning(dt)
@@ -185,8 +222,8 @@ local function updateCharger(z, dt, distToPlayer)
             z.dashDX, z.dashDY = math.cos(ang), math.sin(ang)
         else
             local ang = atan2(player.y - z.y, player.x - z.x)
-            z.x = z.x + math.cos(ang) * z.speed * dt
-            z.y = z.y + math.sin(ang) * z.speed * dt + math.sin(z.wob)*0.15
+            z.x = z.x + math.cos(ang) * z.speed * freezeFactor() * dt
+            z.y = z.y + math.sin(ang) * z.speed * freezeFactor() * dt + math.sin(z.wob)*0.15
         end
     elseif z.chargeState == "telegraph" then
         z.chargeTimer = z.chargeTimer - dt
@@ -220,11 +257,11 @@ local function updateNecromancer(z, dt, distToPlayer, bottom, top)
             castHealPulse(z)
             z.healCd = z.healCdMin + math.random() * (z.healCdMax - z.healCdMin)
         end
-        z.x = z.x + math.cos(z.wob) * 20 * dt
+        z.x = z.x + math.cos(z.wob) * 20 * freezeFactor() * dt
     else
         local ang = atan2(player.y - z.y, player.x - z.x)
-        z.x = z.x + math.cos(ang) * z.speed * dt
-        z.y = z.y + math.sin(ang) * z.speed * dt + math.sin(z.wob)*0.15
+        z.x = z.x + math.cos(ang) * z.speed * freezeFactor() * dt
+        z.y = z.y + math.sin(ang) * z.speed * freezeFactor() * dt + math.sin(z.wob)*0.15
     end
     if z.healPulse > 0 then z.healPulse = math.max(0, z.healPulse - dt) end
 end
@@ -248,11 +285,11 @@ local function updateZombies(dt)
                 fireEnemyBullet(z)
                 z.shootCd = (isBossType(z.t) and 1.4 or 1.7) + math.random()*0.6
             end
-            z.x = z.x + math.cos(z.wob) * 20 * dt
+            z.x = z.x + math.cos(z.wob) * 20 * freezeFactor() * dt
         else
             local ang = atan2(player.y - z.y, player.x - z.x)
-            z.x = z.x + math.cos(ang) * z.speed * dt
-            z.y = z.y + math.sin(ang) * z.speed * dt + math.sin(z.wob)*0.15
+            z.x = z.x + math.cos(ang) * z.speed * freezeFactor() * dt
+            z.y = z.y + math.sin(ang) * z.speed * freezeFactor() * dt + math.sin(z.wob)*0.15
         end
 
         if z.t == "bosssummoner" then
@@ -301,6 +338,15 @@ local function updatePowerups(dt)
     for i = #powerups, 1, -1 do
         local p = powerups[i]
         p.life = p.life - dt
+        if magnetTimeLeft > 0 then
+            local dx, dy = player.x - p.x, player.y - p.y
+            local dist = math.sqrt(dx*dx + dy*dy)
+            if dist > 1 then
+                local pull = math.min(dist, 260 * dt)
+                p.x = p.x + dx / dist * pull
+                p.y = p.y + dy / dist * pull
+            end
+        end
         local d = math.sqrt((p.x-player.x)^2 + (p.y-player.y)^2)
         if d < p.r + player.r then
             applyPowerup(p.t)
@@ -338,7 +384,7 @@ local function onWaveCleared(s)
 end
 
 local function updateWaveFlow(dt, s)
-    if gameMode ~= "classic" then return end
+    if gameMode ~= "classic" and gameMode ~= "roulette" then return end
 
     if waveActive and #spawnQueue == 0 and #zombies == 0 then
         onWaveCleared(s)
@@ -402,6 +448,8 @@ function update(dt)
     local s = baseStats()
 
     updateBuffs(dt)
+    updateRegen(dt, s)
+    updateRoulette(dt)
     updatePlayer(dt, s)
     updateBullets(dt)
     updateMines(dt)

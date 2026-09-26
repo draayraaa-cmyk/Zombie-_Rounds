@@ -28,6 +28,16 @@ function initSounds()
         sounds.coin    = makeSound(600, 1200, 0.12, "sine", 0.25)
         sounds.explode = makeSound(0, 0, 0.35, "noise", 0.35)
         sounds.click   = makeSound(500, 500, 0.04, "square", 0.12)
+        -- 1.1.0 Arsenal weapons
+        sounds.zap     = makeSound(2000, 350, 0.09, "square", 0.14)   -- Arc Gun
+        sounds.thud    = makeSound(180, 50, 0.10, "square", 0.18)     -- Crossbow
+        sounds.beep    = makeSound(900, 850, 0.06, "sine", 0.15)      -- Mine Layer (placing)
+        sounds.whoosh  = makeSound(0, 0, 0.22, "noise", 0.10)         -- Boomerang (throw)
+        sounds.whirr   = makeSound(260, 300, 0.08, "square", 0.08)    -- Orbital Blades (ticks while spinning)
+        -- 1.1.0 pickups
+        sounds.freeze  = makeSound(1200, 1800, 0.16, "sine", 0.18)    -- Freeze
+        sounds.magnet  = makeSound(300, 900, 0.12, "square", 0.12)    -- Magnet
+        sounds.alarm   = makeSound(300, 1200, 0.35, "square", 0.20)   -- Nuke (layered with explode)
     end)
     if not ok then sounds = {} end
 end

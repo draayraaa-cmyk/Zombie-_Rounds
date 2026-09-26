@@ -206,8 +206,16 @@ function maybeDropPowerup(x, y, guaranteed)
 
     local chance = guaranteed and 1.0 or 0.08
     if math.random() < chance then
-        local types = {"speed", "damage", "coinburst", "shield"}
+        local types = {"speed", "damage", "coinburst", "shield", "freeze", "magnet"}
         local t = types[math.random(#types)]
         table.insert(powerups, {x=x, y=y, t=t, r=S(14), life=12})
+    end
+
+    -- nuke: a rare, separately-rolled emergency screen-clear. Kept out of the
+    -- common pool above so it stays rare regardless of the guaranteed-drop rate.
+    local nukeOnField = false
+    for _, p in ipairs(powerups) do if p.t == "nuke" then nukeOnField = true end end
+    if not nukeOnField and math.random() < 0.006 then
+        table.insert(powerups, {x=x, y=y, t="nuke", r=S(16), life=16})
     end
 end

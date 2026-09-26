@@ -36,6 +36,9 @@ function baseStats()
     local pierce = 1 + levelOf("pierce") + permLevelOf("permPierce")
     local fireRate = 1.6 + levelOf("fireRate") * 0.18 + permLevelOf("permFireRate") * 0.08
     local gemPerKill = 1 + permLevelOf("permGems")
+    local critChance = levelOf("crit") * 0.04 + permLevelOf("permCrit") * 0.02
+    local regenPerSec = levelOf("regen") * 0.3 + permLevelOf("permRegen") * 0.15
+    critChance = math.min(0.6, critChance)   -- safety cap; nothing currently pushes this high
 
     if relicEnabled.warmup then dmg = dmg * 1.10 end
     if relicEnabled.glasscannon then dmg = dmg * 1.40; maxHp = maxHp * 0.75 end
@@ -59,6 +62,7 @@ function baseStats()
     return {
         damage = dmg, fireRate = fireRate, maxHp = maxHp, speed = spd,
         multishot = multishot, pierce = pierce, coinMult = coinMult, gemPerKill = gemPerKill,
+        critChance = critChance, regenPerSec = regenPerSec,
     }
 end
 
@@ -81,6 +85,7 @@ function weaponDefByKey(key)
 end
 
 function cycleWeapon()
+    if gameMode == "roulette" then return end   -- Roulette only changes weapon via its own 30s timer
     local idx = 1
     for k, d in ipairs(weaponDefs) do if d.key == player.weapon then idx = k end end
     for step = 1, #weaponDefs do

@@ -11,6 +11,8 @@ upgradeDefs = {
     {key="multishot", name="Multishot",     desc="+1 bullet/shot",     base=60, growth=1.90, max=6},
     {key="pierce",    name="Piercing Rounds",desc="Bullets pierce +1", base=50, growth=1.80, max=5},
     {key="coinBoost", name="Money Bags",    desc="+15% coins earned",  base=30, growth=1.45, max=10},
+    {key="crit",      name="Critical Hits",  desc="+4% chance to deal 2x damage", base=35, growth=1.55, max=8},
+    {key="regen",     name="Regeneration",   desc="+0.3 HP/sec",        base=25, growth=1.40, max=10},
 }
 
 permDefs = {
@@ -22,6 +24,8 @@ permDefs = {
     {key="permMultishot",name="Twin Barrel",      desc="+1 starting multishot, forever",base=20, growth=1.90, max=3},
     {key="permFireRate", name="Twitchy Trigger",  desc="+0.08 fire rate, forever",      base=6,  growth=1.45, max=8},
     {key="permPierce",   name="Deep Impact",      desc="+1 starting pierce, forever",   base=12, growth=1.70, max=3},
+    {key="permCrit",     name="Deadly Precision", desc="+2% crit chance, forever",      base=8,  growth=1.55, max=6},
+    {key="permRegen",    name="Vitality",         desc="+0.15 HP/sec, forever",          base=10, growth=1.55, max=6},
 }
 
 weaponDefs = {
@@ -47,13 +51,17 @@ skinDefs = {
 }
 
 modeDefs = {
-    {key="classic", name="CLASSIC", desc="Wave-based survival. Open the shop any time to spend coins."},
-    {key="horde",   name="HORDE",   desc="Endless continuous horde -- survive as long as you can."},
+    {key="classic",  name="CLASSIC",  desc="Wave-based survival. Open the shop any time to spend coins."},
+    {key="horde",    name="HORDE",    desc="Endless continuous horde -- survive as long as you can."},
+    {key="roulette", name="ROULETTE", desc="Wave-based, like Classic -- but your weapon changes every 30 seconds."},
 }
 difficultyDefs = {
     {key="easy",   name="EASY",   hpMult=0.75, dmgMult=0.70, speedMult=0.85, rewardMult=0.80},
     {key="normal", name="NORMAL", hpMult=1.00, dmgMult=1.00, speedMult=1.00, rewardMult=1.00},
     {key="hard",   name="HARD",   hpMult=1.35, dmgMult=1.30, speedMult=1.15, rewardMult=1.35},
+    {key="nightmare", name="NIGHTMARE", hpMult=1.80, dmgMult=1.60, speedMult=1.30, rewardMult=1.75,
+     hint="Reach wave 20 or survive 5 minutes to unlock",
+     unlock=function() return bestWave >= 20 or bestSurvivalTime >= 300 end},
 }
 
 relicDefs = {

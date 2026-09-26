@@ -52,7 +52,11 @@ function initState()
     buffSpeedTimeLeft = 0
     buffDamageTimeLeft = 0
     shieldTimeLeft = 0
+    freezeTimeLeft = 0
+    magnetTimeLeft = 0
+    rouletteTimer = 30
     flameSoundTimer = 0
+    bladeSoundTimer = 0
 
     state = "start" -- start | modeSelect | metaShop | weaponShop | skinShop | relicMenu | statsPage | settings | playing | shop | gameover | paused
     weaponShopReturnState = "start"  -- which screen the weapon shop returns to on BACK

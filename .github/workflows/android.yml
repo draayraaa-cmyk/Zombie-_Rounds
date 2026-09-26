@@ -16,7 +16,7 @@ jobs:
       - name: Build Android APK
         uses: love-actions/love-actions-android@v2
         with:
-          app-name: "Zombie Seige Beta V5"
+          app-name: "Zombie Seige V1.1.0"
           bundle-id: "com.love2d.zombieseige"
           resource-path: "./android-res"
           love-package: "./game.love"
